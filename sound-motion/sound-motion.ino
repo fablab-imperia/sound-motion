@@ -3,12 +3,14 @@
 #include <avr/pgmspace.h>
 #include "WaveUtil.h"
 #include "WaveHC.h"
-
+#include "WaveShieldIniFile.h"
 
 SdReader card;    // This object holds the information for the card
 FatVolume vol;    // This holds the information for the partition on the card
 FatReader root;   // This holds the information for the filesystem on the card
 FatReader f;      // This holds the information for the file we're play
+
+char buffer[128];
 
 WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
 
@@ -89,6 +91,32 @@ void setup() {
     putstring_nl("Can't open root dir!"); // Something went wrong,
     while(1);                             // then 'halt' - do nothing!
   }
+
+  WaveShieldIniFile ini(f);
+  ini.open(root,"CONF.INI");
+
+
+  
+  // Check the file is valid. This can be used to warn if any lines
+  // are longer than the buffer.
+  if (!ini.validate(buffer, 128)) {
+    Serial.print("ini file ");
+    Serial.print(" not valid ");
+
+    // Cannot do anything else
+    while (1)
+      ;
+  }
+  
+  // Fetch a value from a key which is present
+  if (ini.getValue("Stellaria", "FileWav", buffer, 128)) {
+    Serial.print("section 'Stellaria' has an entry 'FileWav' with value ");
+    Serial.println(buffer);
+  }
+  else {
+    Serial.print("Could not read 'FileWav' from section 'Stellaria'");
+   
+  }
   
   // Whew! We got past the tough parts.
   putstring_nl("Ready!");
@@ -96,7 +124,7 @@ void setup() {
 
 void loop() {
   //putstring(".");            // uncomment this to see if the loop isnt running
-       playcomplete("SOUND1.WAV");
+       playcomplete(buffer);
   
 }
 
