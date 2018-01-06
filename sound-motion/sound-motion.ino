@@ -4,17 +4,22 @@
 #include "WaveUtil.h"
 #include "WaveHC.h"
 #include "WaveShieldIniFile.h"
+#include <NewPing.h>
 
-SdReader card;    // This object holds the information for the card
-FatVolume vol;    // This holds the information for the partition on the card
+#define TRIGGER_PIN  A4  // Arduino pin tied to trigger pin on ping sensor.
+#define ECHO_PIN     A5  // Arduino pin tied to echo pin on ping sensor.
+#define MAX_DISTANCE 300
+#define MAX_TRIGGER_DISTANCE 120
+#define MIN_TRIGGER_DISTANCE 20
+
+
 FatReader root;   // This holds the information for the filesystem on the card
 FatReader f;      // This holds the information for the file we're play
 
-char buffer[128];
+char filename[20];
 
 WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
-
-#define DEBOUNCE 100  // button debouncer
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 
 // this handy function will return the number of bytes currently free in RAM, great for debugging!   
 int freeRam(void)
@@ -31,7 +36,7 @@ int freeRam(void)
   return free_memory; 
 } 
 
-void sdErrorCheck(void)
+void sdErrorCheck(SdReader& card)
 {
   if (!card.errorCode()) return;
   putstring("\n\rSD I/O error: ");
@@ -41,7 +46,8 @@ void sdErrorCheck(void)
   while(1);
 }
 
-void setup() {
+void setup() 
+{
   // set up serial port
   Serial.begin(9600);
   putstring_nl("WaveHC with 6 buttons");
@@ -57,11 +63,14 @@ void setup() {
  
   // pin13 LED
   pinMode(13, OUTPUT);
+
+  SdReader card;    // This object holds the information for the card
+  FatVolume vol;    // This holds the information for the partition on the card
  
   if (!card.init(true)) { //play with 4 MHz spi if 8MHz isn't working for you
   //if (!card.init()) {         //play with 8 MHz spi (default faster!)  
     putstring_nl("Card init. failed!");  // Something went wrong, lets print out why
-    sdErrorCheck();
+    sdErrorCheck(card);
     while(1);                            // then 'halt' - do nothing!
   }
   
@@ -76,7 +85,7 @@ void setup() {
   }
   if (part == 5) {                       // if we ended up not finding one  :(
     putstring_nl("No valid FAT partition!");
-    sdErrorCheck();      // Something went wrong, lets print out why
+    sdErrorCheck(card);      // Something went wrong, lets print out why
     while(1);                            // then 'halt' - do nothing!
   }
   
@@ -95,37 +104,32 @@ void setup() {
   WaveShieldIniFile ini(f);
   ini.open(root,"CONF.INI");
 
-
+  char buffer[128];
   
   // Check the file is valid. This can be used to warn if any lines
   // are longer than the buffer.
-  if (!ini.validate(buffer, 128)) {
+  if (!ini.validate(buffer, 128)) 
+  {
     Serial.print("ini file ");
     Serial.print(" not valid ");
 
     // Cannot do anything else
-    while (1)
-      ;
+    while (1);
   }
   
   // Fetch a value from a key which is present
   if (ini.getValue("Stellaria", "FileWav", buffer, 128)) {
     Serial.print("section 'Stellaria' has an entry 'FileWav' with value ");
-    Serial.println(buffer);
+    strncpy(filename,buffer,20);
+    Serial.println(filename);
   }
   else {
     Serial.print("Could not read 'FileWav' from section 'Stellaria'");
-   
+    while (1);
   }
   
   // Whew! We got past the tough parts.
-  putstring_nl("Ready!");
-}
-
-void loop() {
-  //putstring(".");            // uncomment this to see if the loop isnt running
-       playcomplete(buffer);
-  
+  putstring_nl("Ready to play!");
 }
 
 
@@ -156,3 +160,24 @@ void playfile(char *name) {
   // ok time to play! start playback
   wave.play();
 }
+
+
+void loop() {
+
+
+  long echoTime = sonar.ping_median();
+  unsigned int distanceCm = sonar.convert_cm(echoTime); 
+  
+  Serial.print("PING: ");
+  Serial.println(distanceCm);
+
+  //if we are inside the range for trigger
+  if (distanceCm > MIN_TRIGGER_DISTANCE && distanceCm < MAX_TRIGGER_DISTANCE)
+  {
+      playcomplete(filename);
+  }
+
+  delay(200);
+}
+
+
