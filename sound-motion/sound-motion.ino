@@ -130,7 +130,7 @@ void setup()
     while (1);
   }
 
-  if (ini.getValue("MinTriggerDistance", "FileWav", buffer, 128)) {
+  if (ini.getValue("Stellaria", "MinTriggerDistance", buffer, 128)) {
     Serial.print("section 'Stellaria' has an entry 'MinTriggerDistance' with value ");
       char tmp[5];  
     strncpy(tmp,buffer,5);
@@ -142,7 +142,7 @@ void setup()
   }
 
   
-  if (ini.getValue("MaxTriggerDistance", "FileWav", buffer, 128)) {
+  if (ini.getValue("Stellaria", "MaxTriggerDistance", buffer, 128)) {
     Serial.print("section 'Stellaria' has an entry 'MaxTriggerDistance' with value ");
       char tmp[5];  
     strncpy(tmp,buffer,5);
