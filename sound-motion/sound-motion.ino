@@ -12,7 +12,7 @@
 #define MAX_TRIGGER_DISTANCE 120
 #define MIN_TRIGGER_DISTANCE 20
 #define PAUSE_AFTER_PLAY_IN_SECONDS 60ul
-#define BUFFER_SIZE 128
+#define BUFFER_SIZE 256
 
 
 FatReader root;   // This holds the information for the filesystem on the card
@@ -204,14 +204,14 @@ void loop() {
        
       if (timeSinceLastPlayMs > timeToPauseMs) 
       {
-        putstring("We can play... time since last play is ");
+        putstring("We can play... time since last play is ms ");
         Serial.println(timeSinceLastPlayMs);
         playcomplete(filename);
         timeOfLastPlayMs = millis();
       } 
       else 
       {
-        putstring("Cannot play yet...time since last play is ");
+        putstring("Cannot play yet...time since last play is ms ");
         Serial.println(timeSinceLastPlayMs);
       }
   }
