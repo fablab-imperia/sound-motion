@@ -17,8 +17,6 @@ FatReader root;   // This holds the information for the filesystem on the card
 FatReader f;      // This holds the information for the file we're play
 
 char filename[20];
-unsigned int max_trigger_distance =0; //min distance that triggers play
-unsigned int min_trigger_distance=0;  // max distance that triggers play
 
 WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
@@ -127,29 +125,6 @@ void setup()
   }
   else {
     Serial.print("Could not read 'FileWav' from section 'Stellaria'");
-    while (1);
-  }
-
-  if (ini.getValue("Stellaria", "MinTriggerDistance", buffer, 128)) {
-    Serial.print("section 'Stellaria' has an entry 'MinTriggerDistance' with value ");
-      char tmp[5];  
-    strncpy(tmp,buffer,5);
-    Serial.println(tmp);
-  }
-  else {
-    Serial.print("Could not read 'MinTriggerDistance' from section 'Stellaria'");
-    while (1);
-  }
-
-  
-  if (ini.getValue("Stellaria", "MaxTriggerDistance", buffer, 128)) {
-    Serial.print("section 'Stellaria' has an entry 'MaxTriggerDistance' with value ");
-      char tmp[5];  
-    strncpy(tmp,buffer,5);
-    Serial.println(tmp);
-  }
-  else {
-    Serial.print("Could not read 'MaxTriggerDistance' from section 'Stellaria'");
     while (1);
   }
   
