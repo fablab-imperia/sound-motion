@@ -11,6 +11,7 @@
 #define MAX_DISTANCE 300
 #define MAX_TRIGGER_DISTANCE 120
 #define MIN_TRIGGER_DISTANCE 20
+#define BUFFER_SIZE 128
 
 
 FatReader root;   // This holds the information for the filesystem on the card
@@ -104,11 +105,11 @@ void setup()
   WaveShieldIniFile ini(f);
   ini.open(root,"CONF.INI");
 
-  char buffer[128];
+  char buffer[BUFFER_SIZE];
   
   // Check the file is valid. This can be used to warn if any lines
   // are longer than the buffer.
-  if (!ini.validate(buffer, 128)) 
+  if (!ini.validate(buffer, BUFFER_SIZE)) 
   {
     Serial.print("ini file ");
     Serial.print(" not valid ");
@@ -118,7 +119,7 @@ void setup()
   }
   
   // Fetch a value from a key which is present
-  if (ini.getValue("Stellaria", "FileWav", buffer, 128)) {
+  if (ini.getValue("Stellaria", "FileWav", buffer, BUFFER_SIZE)) {
     Serial.print("section 'Stellaria' has an entry 'FileWav' with value ");
     strncpy(filename,buffer,20);
     Serial.println(filename);
