@@ -11,6 +11,7 @@
 #define MAX_DISTANCE 300
 #define MAX_TRIGGER_DISTANCE 120
 #define MIN_TRIGGER_DISTANCE 20
+#define PAUSE_AFTER_PLAY_IN_SECONDS 60ul
 #define BUFFER_SIZE 128
 
 
@@ -18,6 +19,8 @@ FatReader root;   // This holds the information for the filesystem on the card
 FatReader f;      // This holds the information for the file we're play
 
 char filename[20];
+//start with large negative value to immediately play
+long timeOfLastPlayMs = -100000;
 
 WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
@@ -51,7 +54,6 @@ void setup()
 {
   // set up serial port
   Serial.begin(9600);
-  putstring_nl("WaveHC with 6 buttons");
   
    putstring("Free RAM: ");       // This can help with debugging, running out of RAM is bad
   Serial.println(freeRam());      // if this is under 150 bytes it may spell trouble!
@@ -111,8 +113,7 @@ void setup()
   // are longer than the buffer.
   if (!ini.validate(buffer, BUFFER_SIZE)) 
   {
-    Serial.print("ini file ");
-    Serial.print(" not valid ");
+     putstring("Ini file not valid");
 
     // Cannot do anything else
     while (1);
@@ -120,14 +121,33 @@ void setup()
   
   // Fetch a value from a key which is present
   if (ini.getValue("Stellaria", "FileWav", buffer, BUFFER_SIZE)) {
-    Serial.print("section 'Stellaria' has an entry 'FileWav' with value ");
     strncpy(filename,buffer,20);
-    Serial.println(filename);
   }
   else {
-    Serial.print("Could not read 'FileWav' from section 'Stellaria'");
+    putstring("Could not read 'FileWav' from section 'Stellaria'");
     while (1);
   }
+
+  // Fetch a value from a key which is present
+  if (ini.getValue("Stellaria", "MinTriggerDistance", buffer, BUFFER_SIZE)) {
+    char tmp[10];
+    strncpy(tmp,buffer,10);
+  }
+  else {
+    putstring("Could not read 'MinTriggerDistance' from section 'Stellaria'");
+    while (1);
+  }
+
+    // Fetch a value from a key which is present
+  if (ini.getValue("Stellaria", "MaxTriggerDistance", buffer, BUFFER_SIZE)) {
+    char tmp[10];
+    strncpy(tmp,buffer,10);
+  }
+  else {
+    putstring("Could not read 'MaxTriggerDistance' from section 'Stellaria'");
+    while (1);
+  }
+
   
   // Whew! We got past the tough parts.
   putstring_nl("Ready to play!");
@@ -175,7 +195,25 @@ void loop() {
   //if we are inside the range for trigger
   if (distanceCm > MIN_TRIGGER_DISTANCE && distanceCm < MAX_TRIGGER_DISTANCE)
   {
-      playcomplete(filename);
+
+    
+      //After each play complete we must wait for PAUSE_AFTER_PLAY_IN_SECONDS seconds 
+      //before playing again
+      long timeSinceLastPlayMs =  millis() - timeOfLastPlayMs;
+      unsigned long timeToPauseMs = PAUSE_AFTER_PLAY_IN_SECONDS * 1000ul; 
+       
+      if (timeSinceLastPlayMs > timeToPauseMs) 
+      {
+        putstring("We can play... time since last play is ");
+        Serial.println(timeSinceLastPlayMs);
+        playcomplete(filename);
+        timeOfLastPlayMs = millis();
+      } 
+      else 
+      {
+        putstring("Cannot play yet...time since last play is ");
+        Serial.println(timeSinceLastPlayMs);
+      }
   }
 
   delay(200);
