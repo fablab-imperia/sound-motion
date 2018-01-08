@@ -9,7 +9,10 @@
 #define TRIGGER_PIN  A4  // Arduino pin tied to trigger pin on ping sensor.
 #define ECHO_PIN     A5  // Arduino pin tied to echo pin on ping sensor.
 #define MAX_DISTANCE 300
-#define BUFFER_SIZE 256
+#define MAX_TRIGGER_DISTANCE 120
+#define MIN_TRIGGER_DISTANCE 20
+#define PAUSE_AFTER_PLAY_IN_SECONDS 60ul
+#define BUFFER_SIZE 128
 
 
 FatReader root;   // This holds the information for the filesystem on the card
@@ -18,11 +21,6 @@ FatReader f;      // This holds the information for the file we're play
 char filename[20];
 //start with large negative value to immediately play
 long timeOfLastPlayMs = -100000;
-
-unsigned int MinTriggerDistance = 0u;
-unsigned int MaxTriggerDistance = 0u;
-unsigned int PauseBetweenPlayInSeconds = 0u;
-
 
 WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
@@ -124,8 +122,6 @@ void setup()
   // Fetch a value from a key which is present
   if (ini.getValue("Stellaria", "FileWav", buffer, BUFFER_SIZE)) {
     strncpy(filename,buffer,20);
-    putstring("FileWav: ");
-    Serial.println(filename);
   }
   else {
     putstring("Could not read 'FileWav' from section 'Stellaria'");
@@ -136,9 +132,6 @@ void setup()
   if (ini.getValue("Stellaria", "MinTriggerDistance", buffer, BUFFER_SIZE)) {
     char tmp[10];
     strncpy(tmp,buffer,10);
-    MinTriggerDistance = atoi(tmp);
-    putstring("MinTriggerDistance: ");
-    Serial.println(MinTriggerDistance);
   }
   else {
     putstring("Could not read 'MinTriggerDistance' from section 'Stellaria'");
@@ -149,29 +142,12 @@ void setup()
   if (ini.getValue("Stellaria", "MaxTriggerDistance", buffer, BUFFER_SIZE)) {
     char tmp[10];
     strncpy(tmp,buffer,10);
-    MaxTriggerDistance = atoi(tmp);
-    putstring("MaxTriggerDistance: ");
-    Serial.println(MaxTriggerDistance);
   }
   else {
     putstring("Could not read 'MaxTriggerDistance' from section 'Stellaria'");
     while (1);
   }
 
-      // Fetch a value from a key which is present
-  if (ini.getValue("Stellaria", "PauseBetweenPlayInSeconds", buffer, BUFFER_SIZE)) {
-    char tmp[10];
-    strncpy(tmp,buffer,10);
-    PauseBetweenPlayInSeconds = atoi(tmp);
-    putstring("PauseBetweenPlayInSeconds: ");
-    Serial.println(PauseBetweenPlayInSeconds);
-  }
-  else {
-    putstring("Could not read 'PauseBetweenPlayInSeconds' from section 'Stellaria'");
-    while (1);
-  }
-
-  f.close();
   
   // Whew! We got past the tough parts.
   putstring_nl("Ready to play!");
@@ -217,25 +193,25 @@ void loop() {
   Serial.println(distanceCm);
 
   //if we are inside the range for trigger
-  if (distanceCm > MinTriggerDistance && distanceCm < MaxTriggerDistance)
+  if (distanceCm > MIN_TRIGGER_DISTANCE && distanceCm < MAX_TRIGGER_DISTANCE)
   {
 
     
       //After each play complete we must wait for PAUSE_AFTER_PLAY_IN_SECONDS seconds 
       //before playing again
       long timeSinceLastPlayMs =  millis() - timeOfLastPlayMs;
-      unsigned long timeToPauseMs = PauseBetweenPlayInSeconds * 1000ul; 
+      unsigned long timeToPauseMs = PAUSE_AFTER_PLAY_IN_SECONDS * 1000ul; 
        
       if (timeSinceLastPlayMs > timeToPauseMs) 
       {
-        putstring("We can play... time since last play is ms ");
+        putstring("We can play... time since last play is ");
         Serial.println(timeSinceLastPlayMs);
         playcomplete(filename);
         timeOfLastPlayMs = millis();
       } 
       else 
       {
-        putstring("Cannot play yet...time since last play is ms ");
+        putstring("Cannot play yet...time since last play is ");
         Serial.println(timeSinceLastPlayMs);
       }
   }
