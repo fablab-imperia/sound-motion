@@ -9,9 +9,6 @@
 #define TRIGGER_PIN  A4  // Arduino pin tied to trigger pin on ping sensor.
 #define ECHO_PIN     A5  // Arduino pin tied to echo pin on ping sensor.
 #define MAX_DISTANCE 300
-#define MAX_TRIGGER_DISTANCE 120
-#define MIN_TRIGGER_DISTANCE 20
-#define PAUSE_AFTER_PLAY_IN_SECONDS 60ul
 #define BUFFER_SIZE 128
 
 
@@ -21,6 +18,10 @@ FatReader f;      // This holds the information for the file we're play
 char filename[20];
 //start with large negative value to immediately play
 long timeOfLastPlayMs = -100000;
+unsigned int MaxTriggerDistance= 0;
+unsigned int MinTriggerDistance= 0;
+unsigned int PauseBetweenPlayInSeconds= 0;
+
 
 WaveHC wave;      // This is the only wave (audio) object, since we will only play one at a time
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
@@ -132,6 +133,7 @@ void setup()
   if (ini.getValue("Stellaria", "MinTriggerDistance", buffer, BUFFER_SIZE)) {
     char tmp[10];
     strncpy(tmp,buffer,10);
+    MinTriggerDistance = atoi(tmp);
   }
   else {
     putstring("Could not read 'MinTriggerDistance' from section 'Stellaria'");
@@ -142,9 +144,20 @@ void setup()
   if (ini.getValue("Stellaria", "MaxTriggerDistance", buffer, BUFFER_SIZE)) {
     char tmp[10];
     strncpy(tmp,buffer,10);
+    MaxTriggerDistance = atoi(tmp);
   }
   else {
     putstring("Could not read 'MaxTriggerDistance' from section 'Stellaria'");
+    while (1);
+  }
+
+  if (ini.getValue("Stellaria", "PauseBetweenPlayInSeconds", buffer, BUFFER_SIZE)) {
+    char tmp[10];
+    strncpy(tmp,buffer,10);
+    PauseBetweenPlayInSeconds = atoi(tmp);
+  }
+  else {
+    putstring("Could not read 'PauseBetweenPlayInSeconds' from section 'Stellaria'");
     while (1);
   }
 
@@ -193,14 +206,14 @@ void loop() {
   Serial.println(distanceCm);
 
   //if we are inside the range for trigger
-  if (distanceCm > MIN_TRIGGER_DISTANCE && distanceCm < MAX_TRIGGER_DISTANCE)
+  if (distanceCm > MinTriggerDistance && distanceCm < MaxTriggerDistance)
   {
 
     
-      //After each play complete we must wait for PAUSE_AFTER_PLAY_IN_SECONDS seconds 
+      //After each play complete we must wait for PauseBetweenPlayInSeconds seconds 
       //before playing again
       long timeSinceLastPlayMs =  millis() - timeOfLastPlayMs;
-      unsigned long timeToPauseMs = PAUSE_AFTER_PLAY_IN_SECONDS * 1000ul; 
+      unsigned long timeToPauseMs = PauseBetweenPlayInSeconds * 1000ul; 
        
       if (timeSinceLastPlayMs > timeToPauseMs) 
       {
