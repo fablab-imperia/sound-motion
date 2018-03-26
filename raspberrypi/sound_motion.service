@@ -1,0 +1,12 @@
+[Unit]
+Description=Sound Motion Daemon for Stellaria
+After=sound.target
+
+[Service]
+ExecStart=python /mnt/samba/sound-motion/sound_motion.py
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=SND
+User=root
+Group=root

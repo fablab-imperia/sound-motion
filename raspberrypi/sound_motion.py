@@ -2,6 +2,7 @@ import pygame
 import ConfigParser
 import RPi.GPIO as GPIO
 import time
+import os
 
 def rileva_ascoltatore():
   if sensore_pir_attivo:
@@ -9,6 +10,7 @@ def rileva_ascoltatore():
   else:
     return False
 
+base_path = '/mnt/samba/sound-motion/'
 
 #Imposta la numerazione dei PIN GPIO
 GPIO.setmode(GPIO.BCM)
@@ -18,10 +20,10 @@ GPIO.setup(PIR_SENSOR_PIN, GPIO.IN)
 
 #Leggi il file fi configurazione
 config = ConfigParser.RawConfigParser()
-config.read('sound_motion.cfg')
+config.read( os.path.join(base_path, 'sound_motion.cfg'))
 
 #Recupera parametri da file configurazione
-file_da_riprodurre = config.get("Generale","file_da_riprodurre")
+file_da_riprodurre = os.path.join(base_path, config.get("Generale","file_da_riprodurre"))
 sensore_pir_attivo = config.getboolean("Parametri Sensori","sensore_pir_attivo")
 tempo_massimo_senza_movimenti_sec = config.getint("Parametri Sensori","tempo_massimo_senza_movimenti_sec")
 tempo_pausa_dopo_riproduzione_sec = config.getint("Parametri Sensori","tempo_pausa_dopo_riproduzione_sec")
